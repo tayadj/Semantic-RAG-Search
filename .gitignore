@@ -6,12 +6,7 @@ __pycache__/
 .vs/
 
 # Storage files
-*.json
-*.pdf
-*.png
-*.mp3
-*.txt
-*.csv
+storage/
 
 # Environment settings
 .env
