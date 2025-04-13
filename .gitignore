@@ -7,6 +7,11 @@ __pycache__/
 
 # Storage files
 *.json
+*.pdf
+*.png
+*.mp3
+*.txt
+*.csv
 
 # Environment settings
 .env
