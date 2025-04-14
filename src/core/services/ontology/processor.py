@@ -1,9 +1,12 @@
+import llama_index.core
 import pydantic
 import typing
 
 
 
-class Processor:
+class OntologyProcessor:
+
+
 
 	class OntologyEntity(pydantic.BaseModel):
 
@@ -17,9 +20,11 @@ class Processor:
 
 
 
-	def __init__(self):
+	def __init__(self, model):
 
-		self.SYSTEM_PROMPT = (
+		self.model = model
+
+		self.prompt = llama_index.core.prompts.PromptTemplate(
 			"You are a network graph maker who extracts terms and their relations from a given context. "
 			"You are provided with a context chunk (delimited by ```) Your task is to extract the ontology "
 			"of terms mentioned in the given context. These terms should represent the key concepts as per the context. \n"
@@ -39,7 +44,20 @@ class Processor:
 			"       \"concept_2\": \"A related concept from extracted ontology\",\n"
 			"       \"edge\": \"relationship between the two concepts, concept_1 and concept_2 in one or two sentences\"\n"
 			"   }, {...}\n"
-			"]"
+			"]\n"
+			"\n"
+			"Context: ```{context}```\n"
+			"\n"
+			"Output: "
 		)
 
-		USER_PROMPT = f"context: ```{input}``` \n\n output: "
+	def process(self, text):
+
+		result = (
+			self.model
+				.as_structured_llm(Ontology)
+				.complete(self.prompt.format(context = text))
+				.raw			
+		)
+
+		return result
