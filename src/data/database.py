@@ -1,5 +1,8 @@
+from .connectors import LocalConnector
 
 
 class Database:
 
-	pass
+	def __init__(self, config: dict):
+
+		self.local_connector = LocalConnector(config.get('LOCAL_STORAGE_URL'))

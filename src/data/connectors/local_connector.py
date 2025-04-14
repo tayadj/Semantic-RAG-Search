@@ -13,4 +13,4 @@ class LocalConnector:
 		reader = SimpleDirectoryReader(input_dir = self.URL)
 		documents = reader.load_data()
 
-		print(documents)
+		return documents
