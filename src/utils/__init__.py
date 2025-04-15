@@ -1,1 +1,1 @@
-from .converters import documentsToDataframe
+from .converters import documentsToDataframe, ontologyToDataframe
