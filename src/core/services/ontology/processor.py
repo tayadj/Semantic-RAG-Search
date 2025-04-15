@@ -6,19 +6,15 @@ import typing
 
 class OntologyProcessor:
 
-
-
 	class OntologyEntity(pydantic.BaseModel):
 
 		concept_1: str
 		concept_2: str
-		edge: str
+		relationship: str
 
 	class Ontology(pydantic.BaseModel):
 
-		ontology: typing.List[OntologyEntity]
-
-
+		ontology: typing.List["OntologyEntity"]
 
 	def __init__(self, model):
 
@@ -42,7 +38,7 @@ class OntologyProcessor:
 			"   {\n"
 			"       \"concept_1\": \"A concept from extracted ontology\",\n"
 			"       \"concept_2\": \"A related concept from extracted ontology\",\n"
-			"       \"edge\": \"relationship between the two concepts, concept_1 and concept_2 in one or two sentences\"\n"
+			"       \"relationship\": \"relationship between the two concepts, concept_1 and concept_2 in one or two sentences\"\n"
 			"   }, {...}\n"
 			"]\n"
 			"\n"
@@ -55,7 +51,7 @@ class OntologyProcessor:
 
 		result = (
 			self.model
-				.as_structured_llm(Ontology)
+				.as_structured_llm(self.Ontology)
 				.complete(self.prompt.format(context = text))
 				.raw			
 		)
