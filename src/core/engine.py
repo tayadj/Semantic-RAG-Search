@@ -16,4 +16,19 @@ class Engine:
 
 	def generate_ontology(self, dataframe):
 
-		pass
+		ontology = []
+
+		for idx, record in dataframe.iterrows():
+
+			result = self.ontology_processor.process(record.text)
+			ontology.append(
+				{
+					'metadata': {
+						'id': record.id,
+						'file_name': record.file_name
+					},
+					'ontology': result
+				}
+			)
+
+		return ontology
