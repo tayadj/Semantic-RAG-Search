@@ -1,6 +1,7 @@
 import networkx
 import pandas
 import pyvis
+import seaborn
 
 
 
@@ -22,6 +23,25 @@ def ontologyVisualization(settings, ontology_dataframe):
 			str(row['concept_2']),
 			title = str(row['relationship'])
 		)
+
+	communities_generator = networkx.community.girvan_newman(ontology_graph)
+	next(communities_generator)
+	communities = next(communities_generator)
+	communities = sorted(map(sorted, communities))
+
+	palette = seaborn.color_palette('hls', len(communities)).as_hex()
+	group = 0
+
+	for community in communities:
+
+		color = palette.pop()
+		group += 1
+
+		for node in community:
+
+			ontology_graph.nodes[node]['group'] = group
+			ontology_graph.nodes[node]['color'] = color
+			ontology_graph.nodes[node]['size'] = ontology_graph.degree[node]	
 
 	network = pyvis.network.Network(
 		notebook = False,
