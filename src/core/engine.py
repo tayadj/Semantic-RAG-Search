@@ -2,7 +2,7 @@ import llama_index
 import llama_index.llms.openai
 import os
 
-from .services import OntologyProcessor
+from .services import OntologyProcessor, NexusProcessor
 
 
 class Engine:
@@ -13,6 +13,7 @@ class Engine:
 
 		self.model = llama_index.llms.openai.OpenAI(model = 'gpt-4o-mini')
 		self.ontology_processor = OntologyProcessor(self.model)
+		self.nexus_processor = NexusProcessor()
 
 	def generate_ontology(self, dataframe):
 
