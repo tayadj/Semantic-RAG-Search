@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
 	ontology_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv')
 
-	engine.generate_knowledge(documents_dataframe, ontology_dataframe)
+	knowledge_index = engine.generate_knowledge(documents_dataframe, ontology_dataframe)
 
 	# utils.visualization.ontologyVisualization(settings, ontology_dataframe)
 	

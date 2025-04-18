@@ -1,2 +1,2 @@
-from .services import OntologyProcessor, NexusProcessor
+from .services import OntologyProcessor
 from .engine import Engine

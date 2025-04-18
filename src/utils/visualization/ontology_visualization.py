@@ -16,12 +16,12 @@ def ontologyVisualization(settings, ontology_dataframe):
 			str(node)
 		)
 
-	for index, row in ontology_dataframe.iterrows():
+	for index, record in ontology_dataframe.iterrows():
 
 		ontology_graph.add_edge(
-			str(row['concept_1']),
-			str(row['concept_2']),
-			title = str(row['relationship'])
+			str(record['concept_1']),
+			str(record['concept_2']),
+			title = str(record['relationship'])
 		)
 
 	communities_generator = networkx.community.girvan_newman(ontology_graph)
