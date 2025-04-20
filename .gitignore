@@ -6,7 +6,7 @@ __pycache__/
 .vs/
 
 # Storage files
-*.json
+storage/
 
 # Environment settings
 .env

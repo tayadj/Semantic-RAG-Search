@@ -1,0 +1,6 @@
+llama-index==0.12.30
+llama-index-llms-openai==0.3.33
+networkx==3.4.2
+pydantic==2.11.3
+pydantic-settings==2.8.1
+pyvis==0.3.2
