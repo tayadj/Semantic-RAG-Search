@@ -10,6 +10,8 @@ import utils
 
 def ontology_pipeline(settings, database, engine):
 
+	# Implement multimodality
+
 	documents = database.local_connector.load()
 	documents_dataframe = utils.converters.documentsToDataframe(documents)
 
@@ -28,7 +30,7 @@ def knowledge_pipeline(settings, database, engine):
 
 	knowledge_index = engine.generate_knowledge(documents_dataframe, ontology_dataframe)
 
-def inference_pipeline(settings, database, engine)
+def inference_pipeline(settings, database, engine):
 
 	documents = database.local_connector.load()
 	documents_dataframe = utils.converters.documentsToDataframe(documents)
