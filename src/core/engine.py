@@ -17,6 +17,19 @@ class Engine:
 		self.ontology_processor = OntologyProcessor(self.model)
 		self.vision_processor = VisionProcessor(self.model)
 
+	def generate_description(self, image_documents):
+
+		described_image_documents = []
+
+		for image_document in image_documents:
+
+			result = self.vision_processor.process(image_document)
+			described_image_documents.append(
+				result
+			)
+
+		return described_image_documents
+
 	def generate_ontology(self, documents_dataframe):
 
 		ontology = []

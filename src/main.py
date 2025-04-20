@@ -13,8 +13,9 @@ def ontology_pipeline(settings, database, engine):
 	# Implement multimodality
 
 	documents = database.local_connector.load()
-	image_documents = [document for document in documents if isinstance(document, llama_index.core.schema.ImageDocument)]
 
+	image_documents = [document for document in documents if isinstance(document, llama_index.core.schema.ImageDocument)]
+	described_image_documents = engine.generate_description(image_documents)
 
 	documents_dataframe = utils.converters.documentsToDataframe(documents)
 
