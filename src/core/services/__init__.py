@@ -1,1 +1,1 @@
-from .ontology import OntologyProcessor
+from .ontology import OntologyProcessor, VisionProcessor

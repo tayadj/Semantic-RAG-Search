@@ -2,8 +2,6 @@
 
 class VisionProcessor:
 
-	# Implement processing image content to textual content
-
 	def __init__(self, model):
 
 		self.model = model
