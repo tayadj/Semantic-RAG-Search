@@ -3,7 +3,7 @@ import llama_index.llms.openai
 import os
 import pandas
 
-from .services import OntologyProcessor
+from .services import OntologyProcessor, VisionProcessor
 
 
 class Engine:

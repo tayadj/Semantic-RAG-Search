@@ -1,3 +1,5 @@
+import llama_index
+
 
 
 class VisionProcessor:
@@ -18,3 +20,7 @@ class VisionProcessor:
             "\n"
             "Output: "
         )
+
+    def process(self, image_document):
+
+        pass
