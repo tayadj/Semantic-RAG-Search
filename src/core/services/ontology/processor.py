@@ -1,4 +1,4 @@
-import llama_index.core
+import llama_index
 import pydantic
 import typing
 

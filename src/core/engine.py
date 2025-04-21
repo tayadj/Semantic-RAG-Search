@@ -1,3 +1,4 @@
+import base64
 import llama_index
 import llama_index.llms.openai
 import os
@@ -23,6 +24,7 @@ class Engine:
 
 		for image_document in image_documents:
 
+			image_document.image_resource.data = base64.b64encode(image_document.image_resource.path.read_bytes())
 			result = self.vision_processor.process(image_document)
 			described_image_documents.append(
 				result

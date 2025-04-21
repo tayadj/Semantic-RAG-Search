@@ -1,4 +1,5 @@
 import llama_index
+import llama_index.llms.openai
 
 
 
@@ -19,12 +20,25 @@ class VisionProcessor:
 			"Format your output as a single, plain text description that captures the key visual details and overall context of the image.\n\n"
 			"\n"
 			"Output: "
-		)
+		)	
 
 	def process(self, image_document):
 
-		# generating description
-		description = 'test'
+		message = llama_index.core.llms.ChatMessage(
+			role = llama_index.core.llms.MessageRole.USER,
+			blocks = [
+				llama_index.core.llms.TextBlock(
+					text = self.prompt.format()
+				),
+				llama_index.core.llms.ImageBlock(
+					image = image_document.image_resource.data
+				)				
+			]
+		)
+
+		description = self.model.chat(
+			messages = [message]
+        )
 
 		described_image_text_resource = image_document.text_resource.model_copy(
 			update = {
