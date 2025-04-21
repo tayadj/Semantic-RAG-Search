@@ -4,3 +4,4 @@ networkx==3.4.2
 pydantic==2.11.3
 pydantic-settings==2.8.1
 pyvis==0.3.2
+seaborn==0.13.2

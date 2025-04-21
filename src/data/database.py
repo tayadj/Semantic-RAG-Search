@@ -3,6 +3,8 @@ from .connectors import LocalConnector
 
 class Database:
 
-	def __init__(self, config: dict):
+	def __init__(self, **config: any):
 
-		self.local_connector = LocalConnector(config.get('LOCAL_STORAGE_URL'))
+		if 'local_storage_url' in config: 
+
+			self.local_connector = LocalConnector(config.pop('local_storage_url'))
