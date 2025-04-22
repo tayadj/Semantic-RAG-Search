@@ -66,10 +66,12 @@ class InferenceRequest(pydantic.BaseModel):
 @application.post('/inference')
 def inference_pipeline(request: InferenceRequest):
 
+	print(locals(), '\n\n\n', globals())
+
 	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_KNOWLEDGE_INDEX_MODEL.get_secret_value())
 
 	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize') # Review way of .as_query_engine
-	response = query_engine.query(query)
+	response = query_engine.query(request.query)
 
 	print(f'LLM Response:\n{response}')
 
