@@ -1,15 +1,21 @@
+import fastapi
 import llama_index
 import mlflow
 import pandas
+import pydantic
+import uvicorn
 
 import config
 import core
 import data
 import utils
 
+# Implement asynchronous run
 
+application = fastapi.FastAPI()
 
-def ontology_pipeline(settings, database, engine):
+@application.head('/ontology')
+def ontology_pipeline():
 
 	documents = database.local_connector.load()
 
@@ -27,7 +33,10 @@ def ontology_pipeline(settings, database, engine):
 
 	utils.visualization.ontologyVisualization(settings, ontology_dataframe)
 
-def knowledge_pipeline(settings, database, engine):
+
+
+@application.head('/knowledge')
+def knowledge_pipeline():
 
 	documents = database.local_connector.load()
 	documents_dataframe = utils.converters.documentsToDataframe(documents)
@@ -48,7 +57,14 @@ def knowledge_pipeline(settings, database, engine):
 
 		print(f'Model identifier for loading: {model_uri}')
 
-def inference_pipeline(settings, database, engine, query):
+
+
+class InferenceRequest(pydantic.BaseModel):
+
+	query: str
+
+@application.post('/inference')
+def inference_pipeline(request: InferenceRequest):
 
 	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_KNOWLEDGE_INDEX_MODEL.get_secret_value())
 
@@ -56,8 +72,6 @@ def inference_pipeline(settings, database, engine, query):
 	response = query_engine.query(query)
 
 	print(f'LLM Response:\n{response}')
-
-
 
 if __name__ == '__main__':
 
@@ -68,4 +82,6 @@ if __name__ == '__main__':
 	mlflow.set_experiment('Semantic-RAG-Search') 
 	mlflow.set_tracking_uri(settings.MLFLOW_HOST_URI.get_secret_value())
 	mlflow.llama_index.autolog()
-	
+
+	uvicorn.run(application, host = "0.0.0.0", port = 8000)
+
