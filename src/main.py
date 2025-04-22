@@ -1,4 +1,5 @@
 import llama_index
+import mlflow
 import pandas
 
 import config
@@ -47,6 +48,7 @@ def inference_pipeline(settings, database, engine):
 	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
 	query_text = "Tell me more about American society and its influence on the cultural landscape."
 	response = query_engine.query(query_text)
+
 	print("LLM Response:\n", response)
 
 
@@ -56,4 +58,8 @@ if __name__ == '__main__':
 	settings = config.Settings()
 	database = data.Database(local_storage_url = settings.LOCAL_STORAGE_URL.get_secret_value())
 	engine = core.Engine(settings.OPENAI_API_KEY.get_secret_value())
+
+	mlflow.set_experiment('Semantic-RAG-Search')
+	mlflow.set_tracking_uri('http://localhost:5000')
+	mlflow.llama_index.autolog()
 	
