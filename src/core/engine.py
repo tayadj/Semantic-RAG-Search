@@ -54,7 +54,7 @@ class Engine:
 	def generate_knowledge(self, documents_dataframe, ontology_dataframe):
 
 		knowledge_dataframe = pandas.merge(ontology_dataframe, documents_dataframe, left_on = 'chunk_source', right_on = 'file_name', how = 'inner')
-		knowledge_index = llama_index.core.indices.knowledge_graph.KnowledgeGraphIndex([])
+		knowledge_index = llama_index.core.indices.knowledge_graph.KnowledgeGraphIndex([], llm = self.model)
 		node_parser = llama_index.core.node_parser.SimpleNodeParser()
 
 		for index, record in knowledge_dataframe.iterrows():
