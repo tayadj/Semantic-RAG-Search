@@ -14,6 +14,7 @@ class Engine:
 		os.environ['OPENAI_API_KEY'] = openai_api_key
 
 		self.model = llama_index.llms.openai.OpenAI(model = 'gpt-4o-mini')
+		llama_index.core.Settings.llm = self.model
 
 		self.ontology_processor = OntologyProcessor(self.model)
 		self.vision_processor = VisionProcessor(self.model)

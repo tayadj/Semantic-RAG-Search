@@ -36,21 +36,6 @@ def knowledge_pipeline(settings, database, engine):
 
 	knowledge_index = engine.generate_knowledge(documents_dataframe, ontology_dataframe)
 
-def inference_pipeline(settings, database, engine):
-
-	documents = database.local_connector.load()
-	documents_dataframe = utils.converters.documentsToDataframe(documents)
-
-	ontology_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv')
-
-	knowledge_index = engine.generate_knowledge(documents_dataframe, ontology_dataframe)
-
-	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
-	query_text = "Tell me what is Alaska."
-	response = query_engine.query(query_text)
-
-	print("LLM Response:\n", response)
-
 def knowledge_with_save_pipeline(settings, database, engine):
 
 	documents = database.local_connector.load()
@@ -72,6 +57,29 @@ def knowledge_with_save_pipeline(settings, database, engine):
 		model_uri = model.model_uri
 
 		print(f'Model identifier for loading: {model_uri}')
+
+def inference_pipeline(settings, database, engine, query):
+
+	documents = database.local_connector.load()
+	documents_dataframe = utils.converters.documentsToDataframe(documents)
+
+	ontology_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv')
+
+	knowledge_index = engine.generate_knowledge(documents_dataframe, ontology_dataframe)
+
+	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
+	response = query_engine.query(query)
+
+	print("LLM Response:\n", response)
+
+def inference_with_load_pipeline(settings, database, engine, query):
+
+	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_KNOWLEDGE_INDEX_MODEL.get_secret_value())
+
+	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
+	response = query_engine.query(query)
+
+	print("LLM Response:\n", response)
 
 
 if __name__ == '__main__':
