@@ -11,6 +11,9 @@ import data
 import utils
 
 # Implement asynchronous run
+# Ontology visualization:				'chunk_id': chunk['metadata']['id'], # Remove chunk_id field			### (done)
+# Audio RAG support
+# RAG Evaluation Pipeline via MLFlow
 
 application = fastapi.FastAPI()
 
@@ -39,7 +42,7 @@ def ontology_pipeline():
 def knowledge_pipeline():
 
 	documents = database.local_connector.load()
-	documents_dataframe = utils.converters.documentsToDataframe(documents)
+	documents_dataframe = utils.converters.documentsToDataframe(documents) # save as the tag	
 
 	ontology_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv')
 
@@ -66,14 +69,14 @@ class InferenceRequest(pydantic.BaseModel):
 @application.post('/inference')
 def inference_pipeline(request: InferenceRequest):
 
-	print(locals(), '\n\n\n', globals())
-
-	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_KNOWLEDGE_INDEX_MODEL.get_secret_value())
+	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_MODEL.get_secret_value())
 
 	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize') # Review way of .as_query_engine
 	response = query_engine.query(request.query)
 
-	print(f'LLM Response:\n{response}')
+	return {'response': str(response)}
+
+
 
 if __name__ == '__main__':
 
@@ -86,4 +89,3 @@ if __name__ == '__main__':
 	mlflow.llama_index.autolog()
 
 	uvicorn.run(application, host = "0.0.0.0", port = 8000)
-
