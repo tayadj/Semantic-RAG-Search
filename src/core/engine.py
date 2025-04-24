@@ -19,27 +19,27 @@ class Engine:
 		self.ontology_processor = OntologyProcessor(self.model)
 		self.vision_processor = VisionProcessor(self.model)
 
-	def generate_description(self, image_documents):
+	async def generate_description(self, image_documents):
 
 		described_image_documents = []
 
 		for image_document in image_documents:
 
 			image_document.image_resource.data = base64.b64encode(image_document.image_resource.path.read_bytes())
-			result = self.vision_processor.process(image_document)
+			result = await self.vision_processor.process(image_document)
 			described_image_documents.append(
 				result
 			)
 
 		return described_image_documents
 
-	def generate_ontology(self, documents_dataframe):
+	async def generate_ontology(self, documents_dataframe):
 
 		ontology = []
 
 		for idx, record in documents_dataframe.iterrows():
 
-			result = self.ontology_processor.process(record.text)
+			result = await self.ontology_processor.process(record.text)
 			ontology.append(
 				{
 					'metadata': {
@@ -52,7 +52,7 @@ class Engine:
 
 		return ontology
 
-	def generate_knowledge(self, documents_dataframe, ontology_dataframe):
+	async def generate_knowledge(self, documents_dataframe, ontology_dataframe):
 
 		knowledge_dataframe = pandas.merge(ontology_dataframe, documents_dataframe, left_on = 'chunk_source', right_on = 'file_name', how = 'inner')
 		knowledge_index = llama_index.core.indices.knowledge_graph.KnowledgeGraphIndex([], llm = self.model)

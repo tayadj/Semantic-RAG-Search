@@ -50,12 +50,12 @@ class OntologyProcessor:
 			"Output: "
 		)
 
-	def process(self, text):
+	async def process(self, text):
 
-		result = (
+		result = await (
 			self.model
 				.as_structured_llm(self.Ontology)
-				.complete(self.prompt.format(context = text))
+				.acomplete(self.prompt.format(context = text))
 				.raw			
 		)
 
