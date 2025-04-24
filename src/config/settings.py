@@ -15,6 +15,8 @@ class Settings(pydantic_settings.BaseSettings):
 	)
 
 	LOCAL_STORAGE_URL: pydantic.SecretStr
+
 	OPENAI_API_KEY: pydantic.SecretStr
-	MLFLOW_HOST_URI: pydantic.SecretStr
-	MLFLOW_LLAMA_INDEX_MODEL: pydantic.SecretStr
+
+	MLFLOW_HOST: pydantic.SecretStr
+	MLFLOW_MODEL: pydantic.SecretStr

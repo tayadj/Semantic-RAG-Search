@@ -69,7 +69,11 @@ class InferenceRequest(pydantic.BaseModel):
 @application.post('/inference')
 def inference_pipeline(request: InferenceRequest):
 
-	knowledge_index = mlflow.llama_index.load_model(settings.MLFLOW_LLAMA_INDEX_MODEL.get_secret_value())
+	model_name = settings.MLFLOW_MODEL.get_secret_value()
+	model_version = client.get_registered_model('llama_index_knowledge_index').latest_versions[0].version
+	model_uri = f'models:/{model_name}/{model_version}'
+
+	knowledge_index = mlflow.llama_index.load_model(model_uri)
 
 	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize') # Review way of .as_query_engine
 	response = query_engine.query(request.query)
@@ -84,8 +88,9 @@ if __name__ == '__main__':
 	database = data.Database(local_storage_url = settings.LOCAL_STORAGE_URL.get_secret_value())
 	engine = core.Engine(settings.OPENAI_API_KEY.get_secret_value())
 
+	client = mlflow.tracking.MlflowClient()
 	mlflow.set_experiment('Semantic-RAG-Search') 
-	mlflow.set_tracking_uri(settings.MLFLOW_HOST_URI.get_secret_value())
+	mlflow.set_tracking_uri(settings.MLFLOW_HOST.get_secret_value())
 	mlflow.llama_index.autolog()
 
-	uvicorn.run(application, host = "0.0.0.0", port = 8000)
+	# uvicorn.run(application, host = "0.0.0.0", port = 8000) MLFLOW
