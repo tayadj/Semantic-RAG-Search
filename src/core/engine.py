@@ -4,7 +4,7 @@ import llama_index.llms.openai
 import os
 import pandas
 
-from .services import OntologyProcessor, VisionProcessor, SonitionProcessor
+from .services import OntologyProcessor, VisionProcessor
 
 
 class Engine:
@@ -18,7 +18,6 @@ class Engine:
 
 		self.ontology_processor = OntologyProcessor(self.model)
 		self.vision_processor = VisionProcessor(self.model)
-		self.sonition_processor = SonitionProcessor(self.model)
 
 	def generate_description(self, image_documents):
 

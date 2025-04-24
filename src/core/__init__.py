@@ -1,2 +1,2 @@
-from .services import OntologyProcessor, VisionProcessor, SonitionProcessor
+from .services import OntologyProcessor, VisionProcessor
 from .engine import Engine

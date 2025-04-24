@@ -11,8 +11,6 @@ import data
 import utils
 
 # Implement asynchronous run
-# Ontology visualization:				'chunk_id': chunk['metadata']['id'], # Remove chunk_id field			### (done)
-# Audio RAG support
 # RAG Evaluation Pipeline via MLFlow
 
 application = fastapi.FastAPI()
