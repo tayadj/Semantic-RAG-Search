@@ -3,6 +3,7 @@ import llama_index
 import mlflow
 import pandas
 import pydantic
+import time
 import uvicorn
 
 import config
@@ -68,16 +69,39 @@ class InferenceRequest(pydantic.BaseModel):
 @application.post('/inference')
 async def inference_pipeline(request: InferenceRequest):
 
+	global inference_step
+
+	start_time = time.perf_counter()
+
 	model_name = settings.MLFLOW_MODEL.get_secret_value()
 	model_version = client.get_registered_model(model_name).latest_versions[0].version
 	model_uri = f'models:/{model_name}/{model_version}'
 
 	knowledge_index = mlflow.llama_index.load_model(model_uri)
 
-	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize') # Review way of .as_query_engine
+	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
 	response = await query_engine.aquery(request.query)
 
+	end_time = time.perf_counter()
+
+	latency = end_time - start_time
+
+	mlflow.log_metric("latency", latency, step = inference_step)
+	inference_step += 1
+
 	return {'response': str(response)}
+
+
+
+@application.head('/evaluation')
+async def evaluation_pipeline():
+
+	model_name = settings.MLFLOW_MODEL.get_secret_value()
+	model_version = client.get_registered_model(model_name).latest_versions[0].version
+	model_uri = f'models:/{model_name}/{model_version}'
+
+	knowledge_index = mlflow.llama_index.load_model(model_uri)	
+	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
 
 
 
@@ -93,6 +117,7 @@ if __name__ == '__main__':
 
 	client = mlflow.tracking.MlflowClient()
 	run = mlflow.start_run()
+	inference_step = 0
 
 	try:
 
