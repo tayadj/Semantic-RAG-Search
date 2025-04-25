@@ -87,7 +87,7 @@ async def inference_pipeline(request: InferenceRequest):
 	latency = end_time - start_time
 
 	mlflow.log_metric("latency", latency, step = inference_step)
-	inference_step += 1
+	inference_step += 1 # race condition
 
 	return {'response': str(response)}
 
@@ -100,8 +100,17 @@ async def evaluation_pipeline():
 	model_version = client.get_registered_model(model_name).latest_versions[0].version
 	model_uri = f'models:/{model_name}/{model_version}'
 
-	knowledge_index = mlflow.llama_index.load_model(model_uri)	
-	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
+	evaluation_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_evaluation.csv')
+
+	results = mlflow.evaluate(
+		model = model_uri,
+		data = evaluation_dataframe,
+		targets = 'ground_truth',
+		model_type = 'question-answering',
+		extra_metrics = [ 
+			mlflow.metrics.latency()
+		]
+	)
 
 
 
