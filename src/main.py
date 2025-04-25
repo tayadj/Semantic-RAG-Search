@@ -106,10 +106,16 @@ async def evaluation_pipeline():
 		model = model_uri,
 		data = evaluation_dataframe,
 		targets = 'ground_truth',
-		model_type = 'question-answering',
 		extra_metrics = [ 
-			mlflow.metrics.latency()
-		]
+			mlflow.metrics.latency(),
+			mlflow.metrics.token_count(),
+			mlflow.metrics.genai.answer_correctness("openai:/gpt-4o-mini")
+		],
+		evaluator_config = {
+			'col_mapping': {
+				'inputs': 'query_str'
+			}
+		}
 	)
 
 
