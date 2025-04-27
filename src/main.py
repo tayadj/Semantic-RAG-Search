@@ -19,14 +19,14 @@ class System:
 	def __init__(self, settings, database, engine, tracker):
 
 		self.settings = settings
-		self.database = Database
+		self.database = database
 		self.engine = engine
 		self.tracker = tracker
 
 		self.model_name = settings.MLFLOW_MODEL.get_secret_value()
-		self.model_version = client.get_registered_model(model_name).latest_versions[0].version
-		self.model_uri = f'models:/{model_name}/{model_version}'
-		self.model = mlflow.llama_index.load_model(model_uri)
+		self.model_version = None # tracker.get_registered_model(self.model_name).latest_versions[0].version
+		self.model_uri = None  # f'models:/{self.model_name}/{self.model_version}'
+		self.model = None # mlflow.llama_index.load_model(self.model_uri)
 
 		self.time = 0
 		self.time_lock = asyncio.Lock()
@@ -66,11 +66,9 @@ if __name__ == '__main__':
 
 	system = System(settings, database, engine, tracker)
 	application = fastapi.FastAPI()
+	utils.setup.serverSetup(application, system)
 
-	@application.head('/ontology')
-	async def ontology_endpoint():
-
-		await system.ontology_pipeline()
+	uvicorn.run(application, host = "0.0.0.0", port = 8000)
 
 	
 
