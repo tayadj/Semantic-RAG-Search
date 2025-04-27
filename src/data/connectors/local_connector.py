@@ -10,7 +10,7 @@ class LocalConnector:
 		
 	def load(self):
 
-		reader = llama_index.core.SimpleDirectoryReader(input_dir = self.URL)
+		reader = llama_index.core.SimpleDirectoryReader(input_dir = self.URL, recursive = True, exclude = ['.meta'])
 		documents = reader.load_data()
 
 		return documents

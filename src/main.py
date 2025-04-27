@@ -1,3 +1,4 @@
+import asyncio
 import fastapi
 import llama_index
 import mlflow
@@ -13,6 +14,68 @@ import utils
 
 
 
+class System:
+
+	def __init__(self, settings, database, engine, tracker):
+
+		self.settings = settings
+		self.database = Database
+		self.engine = engine
+		self.tracker = tracker
+
+		self.model_name = settings.MLFLOW_MODEL.get_secret_value()
+		self.model_version = client.get_registered_model(model_name).latest_versions[0].version
+		self.model_uri = f'models:/{model_name}/{model_version}'
+		self.model = mlflow.llama_index.load_model(model_uri)
+
+		self.time = 0
+		self.time_lock = asyncio.Lock()
+
+	async def ontology_pipeline(self):
+
+		documents = database.local_connector.load()
+
+		image_documents = [document for document in documents if isinstance(document, llama_index.core.schema.ImageDocument)]
+		described_image_documents = await engine.generate_description(image_documents)
+
+		documents = [document for document in documents if not isinstance(document, llama_index.core.schema.ImageDocument)]
+		documents = documents + described_image_documents
+
+		documents_dataframe = utils.converters.documentsToDataframe(documents)
+		documents_dataframe.to_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/documents.csv', index = False)
+
+		mlflow.log_artifact(
+			settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/documents.csv',
+			artifact_path = 'documents'
+		)
+
+		ontology = await engine.generate_ontology(documents_dataframe)
+		ontology_dataframe = utils.converters.ontologyToDataframe(ontology)
+		ontology_dataframe.to_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/ontology.csv', index = False)
+
+		utils.visualization.ontologyVisualization(settings, ontology_dataframe)
+
+
+
+if __name__ == '__main__':
+
+	settings = config.Settings()
+	database = data.Database(local_storage_url = settings.LOCAL_STORAGE_URL.get_secret_value())
+	engine = core.Engine(settings.OPENAI_API_KEY.get_secret_value())
+	tracker = mlflow.tracking.MlflowClient()
+
+	system = System(settings, database, engine, tracker)
+	application = fastapi.FastAPI()
+
+	@application.head('/ontology')
+	async def ontology_endpoint():
+
+		await system.ontology_pipeline()
+
+	
+
+
+'''
 application = fastapi.FastAPI()
 
 
@@ -141,3 +204,4 @@ if __name__ == '__main__':
 	finally:
 
 		mlflow.end_run()
+'''
