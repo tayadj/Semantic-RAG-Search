@@ -14,9 +14,13 @@ class Settings(pydantic_settings.BaseSettings):
 		extra = 'ignore'
 	)
 
-	LOCAL_STORAGE_URL: pydantic.SecretStr
-
 	OPENAI_API_KEY: pydantic.SecretStr
 
+	LOCAL_STORAGE_URL: pydantic.SecretStr
+
 	MLFLOW_HOST: pydantic.SecretStr
+	MLFLOW_EXPERIMENT: pydantic.SecretStr
 	MLFLOW_MODEL: pydantic.SecretStr
+
+	SERVER_HOST: pydantic.SecretStr
+	SERVER_PORT: pydantic.SecretStr

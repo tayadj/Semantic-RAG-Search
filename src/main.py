@@ -135,11 +135,11 @@ if __name__ == '__main__':
 
 	try:
 
-		mlflow.set_experiment('Semantic-RAG-Search') 
+		mlflow.set_experiment(settings.MLFLOW_EXPERIMENT.get_secret_value()) 
 		mlflow.set_tracking_uri(settings.MLFLOW_HOST.get_secret_value())
 		mlflow.llama_index.autolog()
 		mlflow.start_run()
-		uvicorn.run(application, host = "0.0.0.0", port = 8000)
+		uvicorn.run(application, host = settings.SERVER_HOST.get_secret_value(), port = int(settings.SERVER_PORT.get_secret_value()))
 
 	finally:
 
