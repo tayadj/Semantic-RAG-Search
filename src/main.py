@@ -61,14 +61,16 @@ class System:
 
 		ontology_dataframe = pandas.read_csv(self.settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/ontology.csv')
 
-		self.model = await self.engine.generate_knowledge(documents_dataframe, ontology_dataframe)
-
 		model = mlflow.llama_index.log_model(
-			self.model,
+			await self.engine.generate_knowledge(documents_dataframe, ontology_dataframe),
 			artifact_path = 'llama_index',
 			engine_type = 'query',
 			registered_model_name = self.settings.MLFLOW_MODEL.get_secret_value()
 		)
+
+		self.model_version = self.tracker.get_registered_model(self.model_name).latest_versions[0].version
+		self.model_uri = f'models:/{self.model_name}/{self.model_version}'
+		self.model = mlflow.llama_index.load_model(self.model_uri)
 
 	async def inference_pipeline(self, request: utils.models.InferenceRequest):
 
