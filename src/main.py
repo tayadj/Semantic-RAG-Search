@@ -1,8 +1,8 @@
+import asyncio
 import fastapi
 import llama_index
 import mlflow
 import pandas
-import pydantic
 import time
 import uvicorn
 
@@ -13,104 +13,114 @@ import utils
 
 
 
-application = fastapi.FastAPI()
+class System:
 
+	def __init__(self, settings, database, engine, tracker):
 
+		self.settings = settings
+		self.database = database
+		self.engine = engine
+		self.tracker = tracker
 
-@application.head('/ontology')
-async def ontology_pipeline():
+		self.model_name = settings.MLFLOW_MODEL.get_secret_value()
+		self.model_version = None # self.tracker.get_registered_model(self.model_name).latest_versions[0].version
+		self.model_uri = None  # f'models:/{self.model_name}/{self.model_version}'
+		self.model = None # mlflow.llama_index.load_model(self.model_uri)
 
-	documents = database.local_connector.load()
+		self.time = 0
+		self.time_lock = asyncio.Lock()
 
-	image_documents = [document for document in documents if isinstance(document, llama_index.core.schema.ImageDocument)]
-	described_image_documents = await engine.generate_description(image_documents)
+	async def ontology_pipeline(self):
 
-	documents = [document for document in documents if not isinstance(document, llama_index.core.schema.ImageDocument)]
-	documents = documents + described_image_documents
+		documents = self.database.local_connector.load()
 
-	documents_dataframe = utils.converters.documentsToDataframe(documents)
+		image_documents = [document for document in documents if isinstance(document, llama_index.core.schema.ImageDocument)]
+		described_image_documents = await self.engine.generate_description(image_documents)
 
-	mlflow.log_artifact(
-		settings.LOCAL_STORAGE_URL.get_secret_value() + '_documents.csv',
-		artifact_path = 'documents'
-	)
+		documents = [document for document in documents if not isinstance(document, llama_index.core.schema.ImageDocument)]
+		documents = documents + described_image_documents
 
-	ontology = await engine.generate_ontology(documents_dataframe)
-	ontology_dataframe = utils.converters.ontologyToDataframe(ontology)
-	ontology_dataframe.to_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv', index = False)
+		documents_dataframe = utils.converters.documentsToDataframe(documents)
+		documents_dataframe.to_csv(self.settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/documents.csv', index = False)
 
-	utils.visualization.ontologyVisualization(settings, ontology_dataframe)
+		mlflow.log_artifact(
+			self.settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/documents.csv',
+			artifact_path = 'documents'
+		)
 
+		ontology = await self.engine.generate_ontology(documents_dataframe)
+		ontology_dataframe = utils.converters.ontologyToDataframe(ontology)
+		ontology_dataframe.to_csv(self.settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/ontology.csv', index = False)
 
+		utils.visualization.ontologyVisualization(self.settings, ontology_dataframe)
 
-@application.head('/knowledge')
-async def knowledge_pipeline():
+	async def knowledge_pipeline(self):
 
-	documents = database.local_connector.load()
-	documents_dataframe = utils.converters.documentsToDataframe(documents)
+		documents = self.database.local_connector.load()
+		documents_dataframe = utils.converters.documentsToDataframe(documents)
 
-	ontology_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_ontology.csv')
+		ontology_dataframe = pandas.read_csv(self.settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/ontology.csv')
 
-	knowledge_index = await engine.generate_knowledge(documents_dataframe, ontology_dataframe)
+		model = mlflow.llama_index.log_model(
+			await self.engine.generate_knowledge(documents_dataframe, ontology_dataframe),
+			artifact_path = 'llama_index',
+			engine_type = 'query',
+			registered_model_name = self.settings.MLFLOW_MODEL.get_secret_value()
+		)
 
-	model = mlflow.llama_index.log_model(
-		knowledge_index,
-		artifact_path = 'llama_index',
-		engine_type = 'query',
-		registered_model_name = settings.MLFLOW_MODEL.get_secret_value()
-	)
+		self.model_version = self.tracker.get_registered_model(self.model_name).latest_versions[0].version
+		self.model_uri = f'models:/{self.model_name}/{self.model_version}'
+		self.model = mlflow.llama_index.load_model(self.model_uri)
 
+	async def inference_pipeline(self, request: utils.models.InferenceRequest):
 
+		start_time = time.perf_counter()
 
-class InferenceRequest(pydantic.BaseModel):
+		if self.model is None:
 
-	query: str
+			self.model_version = self.tracker.get_registered_model(self.model_name).latest_versions[0].version
+			self.model_uri = f'models:/{self.model_name}/{self.model_version}'
+			self.model = mlflow.llama_index.load_model(self.model_uri)
 
-@application.post('/inference')
-async def inference_pipeline(request: InferenceRequest):
+		query_engine = self.model.as_query_engine(include_text = True, response_mode = 'tree_summarize')
+		response = await query_engine.aquery(request.query)
 
-	global inference_step
+		end_time = time.perf_counter()
 
-	start_time = time.perf_counter()
+		latency = end_time - start_time
 
-	model_name = settings.MLFLOW_MODEL.get_secret_value()
-	model_version = client.get_registered_model(model_name).latest_versions[0].version
-	model_uri = f'models:/{model_name}/{model_version}'
+		async with self.time_lock:
+			
+			mlflow.log_metric("latency", latency, step = self.time)
+			self.time += 1
 
-	knowledge_index = mlflow.llama_index.load_model(model_uri)
+		return {'response': str(response)}
 
-	query_engine = knowledge_index.as_query_engine(include_text = True, response_mode = 'tree_summarize')
-	response = await query_engine.aquery(request.query)
+	async def evaluation_pipeline(self):
 
-	end_time = time.perf_counter()
+		if self.model is None:
 
-	latency = end_time - start_time
+			self.model_version = self.tracker.get_registered_model(self.model_name).latest_versions[0].version
+			self.model_uri = f'models:/{self.model_name}/{self.model_version}'
+			self.model = mlflow.llama_index.load_model(self.model_uri)
 
-	mlflow.log_metric("latency", latency, step = inference_step)
-	inference_step += 1 # race condition
+		evaluation_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/evaluation.csv')
 
-	return {'response': str(response)}
-
-
-
-@application.head('/evaluation')
-async def evaluation_pipeline():
-
-	model_name = settings.MLFLOW_MODEL.get_secret_value()
-	model_version = client.get_registered_model(model_name).latest_versions[0].version
-	model_uri = f'models:/{model_name}/{model_version}'
-
-	evaluation_dataframe = pandas.read_csv(settings.LOCAL_STORAGE_URL.get_secret_value() + '_evaluation.csv')
-
-	results = mlflow.evaluate(
-		model = model_uri,
-		data = evaluation_dataframe,
-		targets = 'ground_truth',
-		model_type = 'question-answering',
-		extra_metrics = [ 
-			mlflow.metrics.latency()
-		]
-	)
+		results = mlflow.evaluate(
+			model = self.model_uri,
+			data = evaluation_dataframe,
+			targets = 'ground_truth',
+			extra_metrics = [ 
+				mlflow.metrics.latency(),
+				mlflow.metrics.token_count(),
+				mlflow.metrics.genai.answer_correctness("openai:/gpt-4o-mini")
+			],
+			evaluator_config = {
+				'col_mapping': {
+					'inputs': 'query_str'
+				}
+			}
+		)
 
 
 
@@ -119,18 +129,19 @@ if __name__ == '__main__':
 	settings = config.Settings()
 	database = data.Database(local_storage_url = settings.LOCAL_STORAGE_URL.get_secret_value())
 	engine = core.Engine(settings.OPENAI_API_KEY.get_secret_value())
+	tracker = mlflow.tracking.MlflowClient()
 
-	mlflow.set_experiment('Semantic-RAG-Search') 
-	mlflow.set_tracking_uri(settings.MLFLOW_HOST.get_secret_value())
-	mlflow.llama_index.autolog()
-
-	client = mlflow.tracking.MlflowClient()
-	run = mlflow.start_run()
-	inference_step = 0
+	system = System(settings, database, engine, tracker)
+	application = fastapi.FastAPI()
+	utils.setup.serverSetup(application, system)
 
 	try:
 
-		uvicorn.run(application, host = "0.0.0.0", port = 8000)
+		mlflow.set_experiment(settings.MLFLOW_EXPERIMENT.get_secret_value()) 
+		mlflow.set_tracking_uri(settings.MLFLOW_HOST.get_secret_value())
+		mlflow.llama_index.autolog()
+		mlflow.start_run()
+		uvicorn.run(application, host = settings.SERVER_HOST.get_secret_value(), port = int(settings.SERVER_PORT.get_secret_value()))
 
 	finally:
 
