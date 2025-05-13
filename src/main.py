@@ -91,7 +91,7 @@ class System:
 
 		async with self.time_lock:
 			
-			mlflow.log_metric("latency", latency, step = self.time)
+			mlflow.log_metric("latency/inference", latency, step = self.time)
 			self.time += 1
 
 		return {'response': str(response)}
