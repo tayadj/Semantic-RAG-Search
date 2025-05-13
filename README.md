@@ -75,8 +75,8 @@ LOCAL_STORAGE_URL=<path_to_your_local_storage>
 MLFLOW_HOST=<your_mlflow_tracking_uri>
 MLFLOW_EXPERIMENT=<your_mlflow_experiment_name>
 MLFLOW_MODEL=<your_mlflow_model_name>
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8000
+SERVER_HOST=<your_server_uri>
+SERVER_PORT=<your_server_port<
 ```
 3. Run the application:
 ```
@@ -96,15 +96,18 @@ The system uses a local storage directory to store documents and metadata. The d
 <LOCAL_STORAGE_URL>/
 ├── document1.txt
 ├── document2.pdf
+├── document3.jpg
 ├── ...
 └── .meta/
+    ├── visualisation.html
     ├── documents.csv
+    ├── evaluation.csv
     └── ontology.csv
 ```
 
 ## Demonstration
 ### Ontology Visualization
-The generated ontology can be visualized as an interactive network graph. This graph is created using the pyvis library and saved as an HTML file in your local storage directory ( settings.LOCAL_STORAGE_URL.get_secret_value() + '_visualisation.html').  The nodes represent concepts, and the edges represent relationships between them.  Node sizes are determined by their degree in the graph, and communities are identified using the Girvan-Newman algorithm, with each community assigned a unique color.
+The generated ontology can be visualized as an interactive network graph. This graph is created using the pyvis library and saved as an HTML file in your local storage directory (settings.LOCAL_STORAGE_URL.get_secret_value() + '/.meta/visualisation.html').  The nodes represent concepts, and the edges represent relationships between them.  Node sizes are determined by their degree in the graph, and communities are identified using the Girvan-Newman algorithm, with each community assigned a unique color.
 To view the visualization:
 - Run the HEAD /ontology endpoint.
 - Open the generated HTML file in your web browser.
